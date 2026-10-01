@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TJ Morris Agency · Fair Work Planner</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f3;color:#182d26;font-family:system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:24px}h1{font-size:clamp(25px,4vw,36px)}h2{font-size:22px}.panel{background:white;border:1px solid #cbd8d0;border-radius:12px;padding:20px;margin:20px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}label{display:block;margin:10px 0 5px;font-size:14px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:10px;border:1px solid #9eb1a5;border-radius:6px;background:#fff;color:#182d26}button{background:#17664b;color:#fff;border:0;border-radius:7px;padding:12px 16px;margin:12px 6px 0 0;cursor:pointer}.muted{color:#52655a;line-height:1.6}.result{background:#eef7f0;padding:14px;border-radius:8px}.result strong{display:block;font-size:24px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf3ef;padding:15px;border-radius:8px}#days{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}#days label{padding:12px;border:1px solid #ccd9d1;border-radius:6px;display:flex;gap:8px}#days input{width:auto}#status{color:#734716;min-height:24px}a{color:#17664b}</style></head><body><main>
+<p class="muted">TJ MORRIS AGENCY · ACO CLUB · LOVE AND CARING THROUGH USEFUL WORK</p><h1>Fair Work & Income Planner</h1><p class="muted">Learn a practical AI-assisted service, price it honestly, and prepare a client offer. This free tool does not call AI services or promise income. The default $35/hour is TJ's proposed fair-pay target, not a universal legal minimum.</p><p id="status" role="status" aria-live="polite"></p>
+<section class="panel"><h2>1 · Choose a useful service</h2><label for="service">Service to practice</label><select id="service"><option>Podcast show notes</option><option>Document organization</option><option>Source-backed research summary</option><option>Agent-card catalog organization</option><option>Introductory AI workshop</option></select><label for="scope">Specific deliverable and revision limit</label><textarea id="scope" rows="3">One set of show notes from a client-provided transcript, with source checks and one revision.</textarea><p class="muted">Use the client's permission for their material. Include research, checking, communication, revisions, and administration in your time estimate.</p></section>
+<section class="panel"><h2>2 · Check price, time, and costs</h2><div class="grid">
+<div><label for="price">Price per job (USD)</label><input id="price" type="number" min="0" step="0.01" value="100"></div><div><label for="jobs">Expected jobs per month</label><input id="jobs" type="number" min="0" step="1" value="4"></div><div><label for="hours">Total hours per job</label><input id="hours" type="number" min="0.01" step="0.25" value="2"></div><div><label for="hourly">Target pay per hour (USD)</label><input id="hourly" type="number" min="0" step="0.01" value="35"></div><div><label for="direct">Direct cash costs per job (USD)</label><input id="direct" type="number" min="0" step="0.01" value="5"></div><div><label for="fixed">Monthly tools / overhead (USD)</label><input id="fixed" type="number" min="0" step="0.01" value="10"></div><div><label for="fee">Estimated payment fee (%)</label><input id="fee" type="number" min="0" max="99.99" step="0.01" value="3"></div><div><label for="goal">Monthly cash-income goal (USD)</label><input id="goal" type="number" min="0" step="0.01" value="500"></div><div><label for="weekly">Hours available per week</label><input id="weekly" type="number" min="0" max="168" step="0.5" value="5"></div></div><button id="calculate">Update estimate</button><div id="results" class="grid" style="margin-top:15px"></div><p id="flags" class="muted"></p><p class="muted">All numbers are your assumptions, not forecasts or market prices. Cash surplus excludes income taxes and your labor payment. The second result deducts your target labor value. Benefits, insurance, unpaid time, refunds, and additional costs must be added to your estimate where relevant.</p></section>
+<section class="panel"><h2>3 · Draft the offer</h2><button id="offer">Prepare client offer</button><pre id="offerout">No offer prepared.</pre><button id="export">Download plan and progress</button><p class="muted">Nothing is sent or published. Export before closing; this page does not save your entries automatically.</p></section>
+<section class="panel"><h2>4 · Your original 28-day practice path</h2><p class="muted">Use any AI tool you can access. Paid Claude access is not required by this planner. Each step creates or checks a useful business artifact; completing the path does not guarantee customers, mastery, or earnings.</p><p id="progress">0 of 28 steps marked complete</p><div id="days"></div></section>
+<p class="muted">Built for practical service and fair work. This is an original planner, not a copy of Nexera's course. Our Round Robin lab is a separate demonstration.</p>
+</main><script>
+(function(root){
+ 'use strict';
+ const DAYS=['Choose one service you can deliver','Describe the customer problem','Define one small deliverable','Write a clear AI prompt','Check a sample for factual errors','Improve the sample with feedback','Save your first portfolio sample','Estimate total delivery hours','Record direct costs and tool costs','Set your fair-pay target','Calculate a sustainable quote','Define scope and revision limits','Write an honest client offer','Review the offer with a trusted person','Identify appropriate potential customers','Prepare a short introduction','Share a sample with permission','Record responses without promising results','Ask what customers actually need','Refine the scope from feedback','Review demand before buying tools','Agree on scope before paid work','Prepare a delivery checklist','Check every source and claim','Deliver only work you have reviewed','Record payment and actual expenses','Compare actual hours with your estimate','Decide whether to repeat, revise, or stop'];
+ function calculate(p){
+  for(const key of ['price','jobs','hours','hourly','direct','fixed','fee','goal','weekly'])
+   if(!Number.isFinite(p[key]) || p[key]<0 || p[key]>1000000)throw Error('Invalid nonnegative value: '+key);
+  if(!Number.isInteger(p.jobs)||p.jobs>10000)throw Error('Jobs must be a whole number from 0 to 10000.');
+  if(p.hours<=0)throw Error('Hours per job must be greater than zero.');
+  if(p.fee>=100)throw Error('Fee must be below 100%.');
+  if(p.weekly>168)throw Error('Weekly capacity cannot exceed 168 hours.');
+  const cents=n=>Math.round(n*100),money=n=>Math.round(n)/100;
+  const price=cents(p.price),direct=cents(p.direct),fixed=cents(p.fixed),labor=cents(p.hours*p.hourly);
+  const fee=Math.round(price*p.fee/100),contribution=price-fee-direct;
+  const surplus=p.jobs*contribution-fixed,afterLabor=surplus-p.jobs*labor;
+  const allocatedFixed=p.jobs>0?fixed/p.jobs:null;
+  const sustainable=allocatedFixed===null?null:Math.ceil((direct+labor+allocatedFixed)/(1-p.fee/100));
+  return {revenue:money(price*p.jobs),fees:money(fee*p.jobs),cash_costs:money(direct*p.jobs+fixed),
+   cash_surplus_before_tax:money(surplus),remaining_after_target_labor_before_tax:money(afterLabor),
+   effective_hourly_cash_before_tax:p.jobs>0?money(surplus/(p.jobs*p.hours)):null,
+   sustainable_price_at_planned_volume:sustainable===null?null:money(sustainable),
+   jobs_for_cash_goal:contribution>0?Math.ceil((cents(p.goal)+fixed)/contribution):null,
+   total_hours:p.jobs*p.hours,monthly_capacity_hours:p.weekly*52/12,
+   capacity_ok:p.jobs*p.hours<=p.weekly*52/12,tools_within_ten_dollars:p.fixed<=10,
+   target_hourly:p.hourly,taxes_included:false,guaranteed_income:false};
+ }
+ function offer(service,scope,price){
+  if(!service.trim()||!scope.trim())throw Error('Choose a service and describe its scope.');
+  if(!Number.isFinite(price)||price<0)throw Error('Enter a valid quoted price.');
+  return `TJ Morris Agency / ACO Club\n\nService: ${service}\nScope: ${scope}\nProposed price: $${price.toFixed(2)} USD\n\nAI-assisted work with human review. Delivery date, revision limit, payment terms, and any taxes will be agreed before work begins. This offer does not promise earnings, investment results, or automatic publication.\n\nWe aim to serve with honesty, care, and respect for your time.`;
+ }
+ const api={DAYS,calculate,offer};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.IncomeTool=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+</script><script>
+'use strict';
+const el=id=>document.getElementById(id),keys=['price','jobs','hours','hourly','direct','fixed','fee','goal','weekly'];
+const completed=new Set();let lastPlan=null;
+const money=value=>value===null?'Not available':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value);
+function assumptions(){return Object.fromEntries(keys.map(key=>{const raw=el(key).value;if(!raw.trim())throw Error('Enter a value for '+key);return [key,Number(raw)];}));}
+function guarded(fn){return()=>{try{fn();el('status').textContent='';}catch(e){el('status').textContent=e.message;}};}
+function calculate(){
+ const input=assumptions(),result=IncomeTool.calculate(input);lastPlan={input,result};el('results').replaceChildren();
+ for(const [label,value] of [['Monthly revenue',result.revenue],['Cash surplus before tax',result.cash_surplus_before_tax],['Remaining after target labor',result.remaining_after_target_labor_before_tax],['Cash per work hour before tax',result.effective_hourly_cash_before_tax],['Price covering target pay and costs',result.sustainable_price_at_planned_volume]]){
+  const box=document.createElement('div');box.className='result';box.textContent=label;const number=document.createElement('strong');number.textContent=money(value);box.append(number);el('results').append(box);
+ }
+ el('flags').textContent=`Cash-goal jobs needed: ${result.jobs_for_cash_goal===null?'Not attainable at this price':result.jobs_for_cash_goal}. Planned work: ${result.total_hours} hours/month. Capacity: ${result.capacity_ok?'within your estimate':'exceeds your available hours'}. Tools/overhead: ${result.tools_within_ten_dollars?'within $10/month':'above your $10/month ceiling'}.`;
+}
+for(const [index,task] of IncomeTool.DAYS.entries()){
+ const label=document.createElement('label'),box=document.createElement('input'),text=document.createElement('span');box.type='checkbox';text.textContent=`Day ${index+1}: ${task}`;
+ box.onchange=()=>{box.checked?completed.add(index+1):completed.delete(index+1);el('progress').textContent=`${completed.size} of 28 steps marked complete`;};label.append(box,text);el('days').append(label);
+}
+el('calculate').onclick=guarded(calculate);
+el('offer').onclick=guarded(()=>{calculate();el('offerout').textContent=IncomeTool.offer(el('service').value,el('scope').value,lastPlan.input.price);});
+el('export').onclick=guarded(()=>{
+ calculate();const plan={schema_version:1,exported_at:new Date().toISOString(),service:el('service').value,scope:el('scope').value,...lastPlan,completed_days:[...completed].sort((a,b)=>a-b),offer:IncomeTool.offer(el('service').value,el('scope').value,lastPlan.input.price)};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(plan,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='TJ-Fair-Work-Plan-'+Date.now()+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});guarded(calculate)();
+
+</script></body></html>
