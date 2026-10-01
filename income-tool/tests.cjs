@@ -1,0 +1,8 @@
+const test=require('node:test'),assert=require('node:assert/strict'),tool=require('./income.js');
+const base={price:100,jobs:4,hours:2,hourly:35,direct:5,fixed:10,fee:3,goal:500,weekly:5};
+test('Example separates revenue, cash surplus, and labor',()=>{const r=tool.calculate(base);assert.equal(r.revenue,400);assert.equal(r.fees,12);assert.equal(r.cash_costs,30);assert.equal(r.cash_surplus_before_tax,358);assert.equal(r.remaining_after_target_labor_before_tax,78);assert.equal(r.effective_hourly_cash_before_tax,44.75);assert.equal(r.jobs_for_cash_goal,6);assert.equal(r.sustainable_price_at_planned_volume,79.90);});
+test('No sales handles undefined hourly pay and fixed loss',()=>{const r=tool.calculate({...base,jobs:0});assert.equal(r.cash_surplus_before_tax,-10);assert.equal(r.effective_hourly_cash_before_tax,null);assert.equal(r.sustainable_price_at_planned_volume,null);});
+test('Loss-making price cannot meet income goal',()=>assert.equal(tool.calculate({...base,price:3}).jobs_for_cash_goal,null));
+test('Capacity and budget overruns visible',()=>{const r=tool.calculate({...base,jobs:100,fixed:11});assert.equal(r.capacity_ok,false);assert.equal(r.tools_within_ten_dollars,false);});
+test('Bad inputs rejected',()=>{for(const change of [{hours:0},{fee:100},{jobs:1.2},{price:NaN},{weekly:169},{fixed:-1}])assert.throws(()=>tool.calculate({...base,...change}));});
+test('Original path has 28 steps and quote is bounded',()=>{assert.equal(tool.DAYS.length,28);assert.match(tool.offer('Show notes','One transcript, one revision',100),/\$100.00/);assert.throws(()=>tool.offer('','scope',100));assert.equal(tool.calculate(base).guaranteed_income,false);});
